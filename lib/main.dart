@@ -1,15 +1,71 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:location_tracking_app_demo/tracked_location.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+import 'package:location_tracking_app_demo/etc/logger.dart';
+import 'package:location_tracking_app_demo/etc/stream.dart';
+import 'package:location_tracking_app_demo/overlay/overlay.dart';
+import 'package:location_tracking_app_demo/overlay/overlay_widget.dart';
+import 'package:location_tracking_app_demo/overlay/progress.dart';
+import 'package:location_tracking_app_demo/pages/login/login.dart';
+import 'package:location_tracking_app_demo/pages/visitor/visitors.dart';
+import 'package:location_tracking_app_demo/router/router.dart';
+import 'package:location_tracking_app_demo/router/router_define.dart';
+import 'package:location_tracking_app_demo/saga/saga.dart';
+import 'package:location_tracking_app_demo/saga/saga_initialize.dart';
+import 'package:location_tracking_app_demo/service/service.dart';
+import 'package:location_tracking_app_demo/state/state.dart';
+import 'package:rxdart/rxdart.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final beaconInfos = await importCsv();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  setupLogger();
+  setUrlStrategy(PathUrlStrategy());
+
+  // final beaconInfos = await importCsv();
+
   runApp(
-    ProviderScope(child: LocationTrackingApp(beaconInfos: beaconInfos,)),
+    const ProviderScope(
+      observers: [ProviderLogger()],
+      child: AppWidget(
+        // beaconInfos: beaconInfos,
+      ),
+    ),
   );
 }
+
+class _Ctrl {
+  final ProviderRef ref;
+  _Ctrl(this.ref) {
+    ref.read(initOverlay);
+    ref.read(initRouter);
+    ref.read(initState);
+    ref.read(initService);
+    ref.read(initSaga);
+
+    late StreamSubscription subRouter;
+    subRouter = ref.read(streamProvider).whereType<RouterChangedEvent>().listen((event) {
+      // FIXME: navigator 2.0 call current url first. have to wait first event.
+      subRouter.cancel();
+      ref.read(streamProvider).add(DoInitialize());
+    });
+
+    late StreamSubscription subState;
+    subState = ref.read(streamProvider).whereType<DoneInitialize>().listen((event) {
+      subState.cancel();
+      ref.read(_initializedProvider.notifier).update((state) => true);
+    });
+  }
+}
+
+final _ctrlProvider = Provider((ref) => _Ctrl(ref));
+final _initializedProvider = StateProvider((ref) => false);
 
 Future<List> importCsv() async {
   const path = 'assets/records_beacon.csv';
@@ -19,35 +75,56 @@ Future<List> importCsv() async {
   return beaconInfos;
 }
 
-class LocationTrackingApp extends ConsumerWidget {
-  final List beaconInfos;
-  const LocationTrackingApp({required this.beaconInfos, super.key});
+class AppWidget extends ConsumerWidget {
+  const AppWidget({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
+    ref.read(_ctrlProvider);
+    ref.watch(_initializedProvider);
+    // ref.read(documentProvider);
+
+    return MaterialApp.router(
       title: 'Location tracking app',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: STrackedLocation(beaconInfos: beaconInfos),
+      routeInformationParser: ref.read(appRouteInformationParser),
+      routerDelegate: ref.read(appRouterGeneratePages)((state) {
+        return [
+          MaterialPage(
+            child: Stack(
+              children: [
+                Router(routerDelegate: ref.read(_routerDelegate)),
+                // FIXME: overlay
+                const OverlayWidget(),
+                const ProgressWidget(),
+              ],
+            ),
+          )
+        ];
+      }),
     );
   }
 }
+
+final _routerDelegate = Provider((ref) {
+  return ref.read(appRouterGeneratePages)((state) {
+    final initialzed = ref.read(_initializedProvider);
+    print(initialzed);
+    if (!initialzed) {
+      // FIXME: before initialize
+      return [const MaterialPage(child: Scaffold())];
+    }
+
+    final pages = <Page>[];
+    for (var item in state.segments) {
+      final name = item.name;
+      if (name == RouteLabel.login) pages.add(item.build(const SLogin()));
+      if (name == RouteLabel.visitors) pages.add(item.build(const SVisitors()));
+      // if (name == RouteLabel.visitorsTrackedLocation) pages.add(item.build(const STrackedLocation()));
+    }
+    return pages;
+  });
+});

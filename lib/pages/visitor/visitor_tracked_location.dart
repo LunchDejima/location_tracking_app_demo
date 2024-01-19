@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:location_tracking_app_demo/traked_location_paint.dart';
+import 'package:location_tracking_app_demo/pages/visitor/visitor_traked_location_paint.dart';
 
 final _paintType = StateProvider((ref) => PaintType.point);
 
