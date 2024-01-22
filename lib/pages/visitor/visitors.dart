@@ -1,19 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:location_tracking_app_demo/router/router.dart';
+import 'package:location_tracking_app_demo/router/router_define.dart';
 import 'package:location_tracking_app_demo/state/state_visitor.dart';
-
-// final _stream = Provider.autoDispose((ref) {
-//   final sub = ref.read(streamProvider).listen((value) {
-//     if (value is RouterChangedEvent && RouterChangedEvent.frontmost(RouteLabel.visitors)) {
-//       final d = value.state.segments.last.params?['d'] ?? '1900-01';
-//       ref.read(_dateTime.notifier).update((state) => DateTime.parse('$d-01'));
-//     }
-//   });
-//   ref.onDispose(() {
-//     sub.cancel();
-//   });
-// });
 
 final _dateTime = StateProvider.autoDispose((ref) => DateTime.now().copyWith(
       day: 1,
@@ -34,7 +24,6 @@ class SVisitors extends ConsumerWidget {
 
     // final dateTime = ref.watch(_dateTime);
     final visitors = ref.watch(visitorsProvider);
-
 
     final tableHeader = ['受付日時', '終了日時', '氏名', '担当販売員', '物件名', 'ビーコンID', '商談部屋', ''];
 
@@ -142,10 +131,9 @@ class SVisitors extends ConsumerWidget {
                             padding: const EdgeInsets.all(8.0),
                             child: OutlinedButton(
                               onPressed: () {
-                                // Navigator.push(context, MaterialPageRoute(builder: builder));
-                                // ref.read(routePush)([
-                                //   RouteSegment(RouteLabel.visitorDetail, params: {'id': e.id})
-                                // ]);
+                                ref.read(routePush)([
+                                  RouteSegment(RouteLabel.visitorsTrackedLocation, params: {'id': e.id})
+                                ]);
                               },
                               child: const Text('詳細'),
                             ),

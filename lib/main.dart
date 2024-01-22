@@ -1,16 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:location_tracking_app_demo/etc/logger.dart';
 import 'package:location_tracking_app_demo/etc/stream.dart';
+import 'package:location_tracking_app_demo/etc/style.dart';
 import 'package:location_tracking_app_demo/overlay/overlay.dart';
 import 'package:location_tracking_app_demo/overlay/overlay_widget.dart';
 import 'package:location_tracking_app_demo/overlay/progress.dart';
 import 'package:location_tracking_app_demo/pages/login/login.dart';
+import 'package:location_tracking_app_demo/pages/visitor/visitor_tracked_location.dart';
 import 'package:location_tracking_app_demo/pages/visitor/visitors.dart';
 import 'package:location_tracking_app_demo/router/router.dart';
 import 'package:location_tracking_app_demo/router/router_define.dart';
@@ -28,14 +29,10 @@ void main() async {
   setupLogger();
   setUrlStrategy(PathUrlStrategy());
 
-  // final beaconInfos = await importCsv();
-
   runApp(
     const ProviderScope(
       observers: [ProviderLogger()],
-      child: AppWidget(
-        // beaconInfos: beaconInfos,
-      ),
+      child: AppWidget(),
     ),
   );
 }
@@ -67,14 +64,6 @@ class _Ctrl {
 final _ctrlProvider = Provider((ref) => _Ctrl(ref));
 final _initializedProvider = StateProvider((ref) => false);
 
-Future<List> importCsv() async {
-  const path = 'assets/records_beacon.csv';
-  final strings = await rootBundle.loadString(path);
-  final re = RegExp(',|\n');
-  final beaconInfos = strings.split(re).sublist(9);
-  return beaconInfos;
-}
-
 class AppWidget extends ConsumerWidget {
   const AppWidget({super.key});
 
@@ -86,10 +75,8 @@ class AppWidget extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'Location tracking app',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: getTheme(context, Style.light),
+      darkTheme: getTheme(context, Style.dark),
       routeInformationParser: ref.read(appRouteInformationParser),
       routerDelegate: ref.read(appRouterGeneratePages)((state) {
         return [
@@ -123,7 +110,9 @@ final _routerDelegate = Provider((ref) {
       final name = item.name;
       if (name == RouteLabel.login) pages.add(item.build(const SLogin()));
       if (name == RouteLabel.visitors) pages.add(item.build(const SVisitors()));
-      // if (name == RouteLabel.visitorsTrackedLocation) pages.add(item.build(const STrackedLocation()));
+      if (name == RouteLabel.visitorsTrackedLocation) {
+        pages.add(MaterialPage(child: const STrackedLocation(), arguments: item));
+      }
     }
     return pages;
   });

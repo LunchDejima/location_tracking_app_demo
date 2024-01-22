@@ -7,12 +7,14 @@ enum PaintType {
 }
 
 class FootprintsPainter extends CustomPainter {
-  final List beaconInfos;
+  final List<String> beaconInfos;
   final PaintType paintType;
 
   FootprintsPainter({required this.beaconInfos, required this.paintType});
   @override
   void paint(Canvas canvas, Size size) async {
+    if(beaconInfos.isEmpty) return;
+
     final infos = beaconInfos;
     final rowNum = infos.length ~/ 9;
     final magnification = size.width / 1160;
@@ -39,6 +41,16 @@ class FootprintsPainter extends CustomPainter {
       return Offset(x, y);
     }).toList();
 
+    if (rowNum == 1) {
+      final color = const Color(0xFFF6493D).withOpacity(0.4);
+      paint.color = color;
+      canvas.drawPoints(
+        ui.PointMode.points,
+        [pointsOffset[0]],
+        paint,
+      );
+      return;
+    }
     if (paintType == PaintType.point) {
       pointsOffset.asMap().forEach((i, value) {
         final color = ColorTween(
@@ -82,6 +94,6 @@ class FootprintsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
+    return true;
   }
 }
