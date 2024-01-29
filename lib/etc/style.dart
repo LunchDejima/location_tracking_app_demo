@@ -16,8 +16,8 @@ class Style {
       error: Color(0xFFFF6969),
       outline: Color(0xFF838383),
       //
-      surface: Color(0xFF0F0F0F),
-      onSurface: Color(0xFFFFFFFF),
+      surface: Color(0xFFFFFFFF),
+      onSurface: Color(0xFF0F0F0F),
       surfaceVariant: Color(0xFF313131),
       onSurfaceVariant: Color(0xFFC1C1C1),
       background: Color(0xFF1F1F1F),
@@ -55,6 +55,9 @@ ThemeData getTheme(BuildContext context, Style style) {
     splashColor: Colors.transparent,
     highlightColor: Colors.transparent,
     fontFamily: 'Hiragino Kaku Gothic ProN',
+    textTheme: TextTheme(
+      bodyMedium: TextStyle(fontSize: 16, color: style.colorScheme.onSurface),
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: style.colorScheme.primary,

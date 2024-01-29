@@ -45,6 +45,7 @@ class Visitor {
   final Map<String, String> attachmentUrls; 
 
   final int status;
+  final List<String> beaconInfos;
 
   const Visitor({
     required this.id,
@@ -66,6 +67,7 @@ class Visitor {
     required this.attachments,
     required this.attachmentUrls,
     required this.status,
+    required this.beaconInfos,
   });
 
   static Visitor empty() {
@@ -89,6 +91,7 @@ class Visitor {
       attachments: const [],
       attachmentUrls: const {},
       status: 0, //0:初期状態, 1: 入場済み, 100:退出済み, 101:位置情報記録済み, 102: 位置情報検出できない場合
+      beaconInfos: const [],
     );
   }
 

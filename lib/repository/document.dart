@@ -120,7 +120,6 @@ class DocumentFire extends Document {
     });
   }
 
-
   @override
   void listenVisitorHistory({required DateTime dateTime}) {
     final key = dateTime.toIso8601String();
